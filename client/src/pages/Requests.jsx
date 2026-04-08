@@ -29,29 +29,38 @@ function Requests() {
     window.location.reload();
   };
 
-  const formatStatus = (status) =>
-    status.charAt(0).toUpperCase() + status.slice(1);
+  const formatStatus = (s) =>
+    s.charAt(0).toUpperCase() + s.slice(1);
+
+  // 🔥 SORT FUNCTION (NEW)
+  const sortByLatest = (arr) =>
+    [...arr].sort((a, b) => {
+      const timeA = new Date(a.updatedAt || a.createdAt);
+      const timeB = new Date(b.updatedAt || b.createdAt);
+      return timeB - timeA;
+    });
 
   return (
     <div className="h-full overflow-y-auto bg-gray-950 text-white p-8">
+      <div className="max-w-6xl mx-auto">
 
-      <h1 className="text-2xl mb-8">Requests</h1>
+        <h1 className="text-3xl font-semibold mb-6">Requests</h1>
 
-      <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-2 gap-8">
 
-        {/* RECEIVED */}
-        <div>
-          <h2 className="mb-4 text-lg text-gray-300">Received</h2>
+          {/* RECEIVED */}
+          <div>
+            <h2 className="text-lg mb-4 text-gray-300">Received</h2>
 
-          {[...received]
-            .sort((a, b) => {
-              if (a.status === "pending" && b.status !== "pending") return -1;
-              if (a.status !== "pending" && b.status === "pending") return 1;
-              return 0;
-            })
-            .map((r) => (
-              <div key={r._id} className="bg-gray-900 p-4 rounded mb-4 border border-gray-800">
+            {received.length === 0 && (
+              <p className="text-gray-500 text-sm">No received requests</p>
+            )}
 
+            {sortByLatest(received).map((r) => (
+              <div
+                key={r._id}
+                className="bg-gradient-to-br from-gray-900 to-gray-800 p-5 rounded-lg border border-gray-700 shadow-lg mb-4"
+              >
                 <p className="text-sm text-gray-400">
                   From: {r.from?.name}
                 </p>
@@ -65,7 +74,7 @@ function Requests() {
                 </p>
 
                 {r.status === "pending" && (
-                  <div className="flex gap-2">
+                  <div className="flex gap-2 mt-3">
                     <button
                       onClick={() => updateRequest(r._id, "accepted")}
                       className="bg-green-600 px-3 py-1 rounded text-sm"
@@ -85,29 +94,28 @@ function Requests() {
                 {r.status === "accepted" && (
                   <button
                     onClick={() => navigate(`/chat/${r.from._id}`)}
-                    className="mt-2 bg-blue-600 px-3 py-1 rounded text-sm"
+                    className="mt-3 bg-blue-600 px-3 py-1 rounded text-sm"
                   >
                     Chat
                   </button>
                 )}
-
               </div>
             ))}
-        </div>
+          </div>
 
-        {/* SENT */}
-        <div>
-          <h2 className="mb-4 text-lg text-gray-300">Sent</h2>
+          {/* SENT */}
+          <div>
+            <h2 className="text-lg mb-4 text-gray-300">Sent</h2>
 
-          {[...sent]
-            .sort((a, b) => {
-              if (a.status === "pending" && b.status !== "pending") return -1;
-              if (a.status !== "pending" && b.status === "pending") return 1;
-              return 0;
-            })
-            .map((r) => (
-              <div key={r._id} className="bg-gray-900 p-4 rounded mb-4 border border-gray-800">
+            {sent.length === 0 && (
+              <p className="text-gray-500 text-sm">No sent requests</p>
+            )}
 
+            {sortByLatest(sent).map((r) => (
+              <div
+                key={r._id}
+                className="bg-gradient-to-br from-gray-900 to-gray-800 p-5 rounded-lg border border-gray-700 shadow-lg mb-4"
+              >
                 <p className="text-sm text-gray-400">
                   To: {r.to?.name}
                 </p>
@@ -123,14 +131,15 @@ function Requests() {
                 {r.status === "accepted" && (
                   <button
                     onClick={() => navigate(`/chat/${r.to._id}`)}
-                    className="mt-2 bg-blue-600 px-3 py-1 rounded text-sm"
+                    className="mt-3 bg-blue-600 px-3 py-1 rounded text-sm"
                   >
                     Chat
                   </button>
                 )}
-
               </div>
             ))}
+          </div>
+
         </div>
 
       </div>

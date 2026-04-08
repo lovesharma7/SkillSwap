@@ -1,24 +1,25 @@
 const express = require("express");
 const router = express.Router();
+
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+
 const User = require("../models/User");
+const Request = require("../models/Request");
+const Message = require("../models/Message");
 
 // ================= REGISTER =================
 router.post("/register", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    // check if user exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: "User already exists" });
     }
 
-    // hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // create user
     const user = new User({
       name,
       email,
@@ -29,33 +30,24 @@ router.post("/register", async (req, res) => {
 
     await user.save();
 
-    res.json({ message: "User registered successfully ✅" });
+    res.json({ message: "User registered successfully" });
 
   } catch (err) {
-    console.log(err);
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 // ================= LOGIN =================
 router.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // check user
     const user = await User.findOne({ email });
-    if (!user) {
-      return res.status(400).json({ message: "User not found" });
-    }
+    if (!user) return res.status(400).json({ message: "User not found" });
 
-    // check password
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid password" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid password" });
 
-    // create token
     const token = jwt.sign(
       { id: user._id },
       process.env.JWT_SECRET,
@@ -63,7 +55,7 @@ router.post("/login", async (req, res) => {
     );
 
     res.json({
-      message: "Login successful ✅",
+      message: "Login successful",
       token,
       user: {
         id: user._id,
@@ -73,82 +65,85 @@ router.post("/login", async (req, res) => {
     });
 
   } catch (err) {
-    console.log(err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
+// ================= PROFILE =================
+router.get("/profile/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
 
-// ================= UPDATE SKILLS =================
-router.post("/update-skills", async (req, res) => {
+    res.json({
+      skillsOffered: user.skillsOffered || [],
+      skillsWanted: user.skillsWanted || [],
+    });
+
+  } catch {
+    res.status(500).json({ message: "Error" });
+  }
+});
+
+router.post("/profile", async (req, res) => {
   try {
     const { userId, skillsOffered, skillsWanted } = req.body;
 
-    const user = await User.findByIdAndUpdate(
-      userId,
-      {
-        skillsOffered,
-        skillsWanted,
-      },
-      { new: true }
-    );
-
-    res.json({
-      message: "Skills updated ✅",
-      user,
+    await User.findByIdAndUpdate(userId, {
+      skillsOffered,
+      skillsWanted,
     });
 
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Server error" });
+    res.json({ message: "Profile updated" });
+
+  } catch {
+    res.status(500).json({ message: "Error" });
   }
 });
 
-// ================= GET ALL USERS =================
+// ================= USERS =================
 router.get("/users", async (req, res) => {
-  try {
-    const users = await User.find();
-
-    res.json(users);
-
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ message: "Server error" });
-  }
+  const users = await User.find();
+  res.json(users);
 });
 
-// ================= GET SINGLE USER =================
 router.get("/user/:id", async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
+  const user = await User.findById(req.params.id);
+  res.json(user);
 });
 
-const Request = require("../models/Request");
+// ================= REQUESTS =================
 
-// ================= SEND REQUEST =================
+// SEND REQUEST (FIXED 🔥)
 router.post("/send-request", async (req, res) => {
   try {
     const { from, to } = req.body;
 
-    const existing = await Request.findOne({ from, to });
+    const existing = await Request.findOne({
+      $or: [
+        { from, to },
+        { from: to, to: from },
+      ],
+    });
 
     if (existing) {
-      if (existing.status === "pending") {
-        return res.json({ message: "Request already pending" });
-      }
-
+      // ✅ already connected
       if (existing.status === "accepted") {
         return res.json({ message: "Already connected" });
       }
 
-      // ✅ If declined → allow new request
+      // ✅ already pending
+      if (existing.status === "pending") {
+        return res.json({ message: "Request already pending" });
+      }
+
+      // 🔥 FIX: if declined → update direction
       if (existing.status === "declined") {
+        existing.from = from;
+        existing.to = to;
         existing.status = "pending";
+
         await existing.save();
+
         return res.json({ message: "Request sent again" });
       }
     }
@@ -158,12 +153,12 @@ router.post("/send-request", async (req, res) => {
 
     res.json({ message: "Request sent" });
 
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
+  } catch {
+    res.status(500).json({ message: "Error" });
   }
 });
 
-// ================= GET REQUESTS =================
+// GET REQUESTS
 router.get("/requests/:userId", async (req, res) => {
   try {
     const userId = req.params.userId;
@@ -176,13 +171,12 @@ router.get("/requests/:userId", async (req, res) => {
 
     res.json({ sent, received });
 
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
+  } catch {
+    res.status(500).json({ message: "Error" });
   }
 });
 
-
-// ================= UPDATE REQUEST =================
+// UPDATE REQUEST
 router.post("/update-request", async (req, res) => {
   try {
     const { requestId, status } = req.body;
@@ -191,14 +185,42 @@ router.post("/update-request", async (req, res) => {
 
     res.json({ message: "Request updated" });
 
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
+  } catch {
+    res.status(500).json({ message: "Error" });
   }
 });
 
-const Message = require("../models/Message");
+// ================= CHAT USERS =================
+router.get("/chat-users/:userId", async (req, res) => {
+  try {
+    const userId = req.params.userId;
 
-// ================= SEND MESSAGE =================
+    const requests = await Request.find({
+      status: "accepted",
+      $or: [{ from: userId }, { to: userId }],
+    })
+      .populate("from", "name email")
+      .populate("to", "name email");
+
+    const usersMap = new Map();
+
+    requests.forEach((r) => {
+      const other =
+        r.from._id.toString() === userId ? r.to : r.from;
+
+      usersMap.set(other._id.toString(), other);
+    });
+
+    res.json(Array.from(usersMap.values()));
+
+  } catch {
+    res.status(500).json({ message: "Error" });
+  }
+});
+
+// ================= MESSAGES =================
+
+// SEND MESSAGE
 router.post("/send-message", async (req, res) => {
   try {
     const { from, to, text } = req.body;
@@ -208,12 +230,12 @@ router.post("/send-message", async (req, res) => {
 
     res.json({ message: "Sent" });
 
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Error" });
   }
 });
 
-// ================= GET MESSAGES =================
+// GET MESSAGES
 router.get("/messages/:user1/:user2", async (req, res) => {
   try {
     const { user1, user2 } = req.params;
@@ -227,42 +249,14 @@ router.get("/messages/:user1/:user2", async (req, res) => {
 
     res.json(messages);
 
-  } catch (err) {
+  } catch {
     res.status(500).json({ message: "Error" });
   }
 });
 
-router.get("/chat-users/:userId", async (req, res) => {
-  try {
-    const userId = req.params.userId;
+// ================= NOTIFICATIONS =================
 
-    const requests = await Request.find({
-      status: "accepted",
-      $or: [{ from: userId }, { to: userId }],
-    })
-      .populate("from", "name email")
-      .populate("to", "name email");
-
-    // 🔥 Deduplicate users
-    const usersMap = new Map();
-
-    requests.forEach((r) => {
-      const otherUser =
-        r.from._id.toString() === userId ? r.to : r.from;
-
-      usersMap.set(otherUser._id.toString(), otherUser);
-    });
-
-    const uniqueUsers = Array.from(usersMap.values());
-
-    res.json(uniqueUsers);
-
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// ================= UNREAD COUNT =================
+// TOTAL UNREAD
 router.get("/unread/:userId", async (req, res) => {
   const count = await Message.countDocuments({
     to: req.params.userId,
@@ -272,7 +266,7 @@ router.get("/unread/:userId", async (req, res) => {
   res.json({ count });
 });
 
-// ================= UNREAD PER USER =================
+// PER USER UNREAD
 router.get("/unread-user/:me/:other", async (req, res) => {
   const { me, other } = req.params;
 
@@ -285,7 +279,7 @@ router.get("/unread-user/:me/:other", async (req, res) => {
   res.json({ count });
 });
 
-// ================= MARK AS SEEN =================
+// MARK AS SEEN
 router.post("/mark-seen", async (req, res) => {
   const { from, to } = req.body;
 

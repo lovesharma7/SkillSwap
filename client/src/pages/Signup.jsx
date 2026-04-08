@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 function Signup() {
   const [form, setForm] = useState({
@@ -8,56 +8,111 @@ function Signup() {
     password: "",
   });
 
-  const navigate = useNavigate();
-
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    setForm({
+      ...form,
+      [e.target.name]: e.target.value,
+    });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSignup = async () => {
+    // 🔥 VALIDATION
+    if (
+      !form.name.trim() ||
+      !form.email.trim() ||
+      !form.password.trim()
+    ) {
+      alert("Please fill all fields");
+      return;
+    }
 
-    const res = await fetch("http://localhost:5000/api/auth/register", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(form),
-    });
+    if (form.password.length < 4) {
+      alert("Password must be at least 4 characters");
+      return;
+    }
 
-    const data = await res.json();
+    try {
+      const res = await fetch("http://localhost:5000/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(form),
+      });
 
-    if (res.ok) {
-      alert("Signup successful 🎉");
-      navigate("/");
-    } else {
-      alert(data.message);
+      const data = await res.json();
+
+      if (res.ok) {
+        alert("Signup successful");
+
+        // redirect to login
+        window.location.href = "/login";
+      } else {
+        alert(data.message);
+      }
+
+    } catch {
+      alert("Server error");
     }
   };
 
   return (
-    <div className="h-screen flex items-center justify-center bg-gradient-to-br from-gray-900 to-black">
-      <form className="bg-gray-800 p-8 rounded-2xl w-80 space-y-4 shadow-xl" onSubmit={handleSubmit}>
-        <h2 className="text-white text-2xl text-center font-bold">Signup</h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-950 text-white px-4">
 
-        <input name="name" placeholder="Name" onChange={handleChange}
-          className="w-full p-2 bg-gray-700 text-white rounded" />
+      <div className="w-full max-w-md bg-gradient-to-br from-gray-900 to-gray-800 p-7 rounded-xl border border-gray-700 shadow-lg">
 
-        <input name="email" placeholder="Email" onChange={handleChange}
-          className="w-full p-2 bg-gray-700 text-white rounded" />
+        <h2 className="text-2xl font-semibold mb-6 text-center">
+          Create Account
+        </h2>
 
-        <input name="password" placeholder="Password" type="password" onChange={handleChange}
-          className="w-full p-2 bg-gray-700 text-white rounded" />
+        {/* NAME */}
+        <input
+          type="text"
+          name="name"
+          placeholder="Full Name"
+          value={form.name}
+          onChange={handleChange}
+          className="w-full mb-4 p-3 bg-gray-800 rounded-lg outline-none focus:ring-2 focus:ring-blue-600"
+        />
 
-        <button className="w-full bg-blue-500 p-2 rounded text-white hover:bg-blue-600">
-          Signup
+        {/* EMAIL */}
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          className="w-full mb-4 p-3 bg-gray-800 rounded-lg outline-none focus:ring-2 focus:ring-blue-600"
+        />
+
+        {/* PASSWORD */}
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          className="w-full mb-5 p-3 bg-gray-800 rounded-lg outline-none focus:ring-2 focus:ring-blue-600"
+        />
+
+        {/* BUTTON */}
+        <button
+          onClick={handleSignup}
+          className="w-full bg-blue-600 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium"
+        >
+          Sign Up
         </button>
 
-        <p className="text-gray-400 text-sm text-center">
+        {/* LINK */}
+        <p className="text-sm text-gray-400 mt-4 text-center">
           Already have an account?{" "}
-          <Link to="/" className="text-blue-400">Login</Link>
+          <Link to="/login" className="text-blue-500 hover:underline">
+            Login
+          </Link>
         </p>
-      </form>
+
+      </div>
+
     </div>
   );
 }

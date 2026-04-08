@@ -3,82 +3,108 @@ import { useEffect, useState } from "react";
 
 function Navbar() {
   const navigate = useNavigate();
-
-  const [requestCount, setRequestCount] = useState(0);
-  const [chatCount, setChatCount] = useState(0);
-
   const user = JSON.parse(localStorage.getItem("user"));
 
-  useEffect(() => {
+  const [reqCount, setReqCount] = useState(0);
+  const [chatCount, setChatCount] = useState(0);
+
+  const fetchNotifications = () => {
     if (!user) return;
 
-    const fetchData = () => {
-      // 🔔 REQUESTS
-      fetch(`http://localhost:5000/api/auth/requests/${user.id}`)
-        .then(res => res.json())
-        .then(data => {
-          const pending = data.received.filter(r => r.status === "pending");
-          setRequestCount(pending.length);
-        });
+    // 🔔 Requests
+    fetch(`http://localhost:5000/api/auth/requests/${user.id}`)
+      .then(res => res.json())
+      .then(data => {
+        const pending = data.received.filter(r => r.status === "pending");
+        setReqCount(pending.length);
+      });
 
-      // 💬 CHAT NOTIFICATIONS
-      fetch(`http://localhost:5000/api/auth/unread/${user.id}`)
-        .then(res => res.json())
-        .then(data => setChatCount(data.count));
-    };
+    // 🔔 Chats
+    fetch(`http://localhost:5000/api/auth/unread/${user.id}`)
+      .then(res => res.json())
+      .then(data => {
+        setChatCount(data.count);
+      });
+  };
 
-    fetchData();
-    const interval = setInterval(fetchData, 3000);
+  useEffect(() => {
+    fetchNotifications(); // initial
+
+    // 🔥 auto refresh every 3 sec
+    const interval = setInterval(fetchNotifications, 3000);
 
     return () => clearInterval(interval);
-  }, [user]);
+  }, []);
 
-  const handleLogout = () => {
+  const logout = () => {
     localStorage.clear();
-    navigate("/");
+    window.location.href = "/";
   };
 
   return (
-    <nav className="bg-gray-950 border-b border-gray-800 px-8 py-4 flex justify-between items-center">
+    <div className="h-[65px] bg-gray-900 border-b border-gray-800 flex items-center justify-between px-6">
 
-      <Link to="/discover" className="text-xl font-semibold text-white">
-        SkillSwap
-      </Link>
+      {/* LOGO */}
+      <div
+  onClick={() => navigate("/")}
+  className="text-2xl md:text-3xl font-extrabold cursor-pointer tracking-tight select-none"
+>
+  <span className="bg-gradient-to-r from-blue-500 to-indigo-500 bg-clip-text text-transparent">
+    Skill
+  </span>
+  <span className="text-white">Swap</span>
+</div>
 
-      <div className="flex gap-6 items-center text-gray-300">
+      {/* NAV */}
+      <div className="flex items-center gap-6 text-sm">
 
-        <Link to="/discover">Discover</Link>
-        <Link to="/profile">Profile</Link>
+        <Link to="/" className="hover:text-blue-400">
+          Home
+        </Link>
+
+        <Link to="/discover" className="hover:text-blue-400">
+          Discover
+        </Link>
 
         {/* REQUESTS */}
         <div className="relative">
-          <Link to="/requests">Requests</Link>
-          {requestCount > 0 && (
-            <span className="absolute -top-2 -right-3 bg-blue-600 text-xs px-2 py-0.5 rounded-full">
-              {requestCount}
+          <Link to="/requests" className="hover:text-blue-400">
+            Requests
+          </Link>
+
+          {reqCount > 0 && (
+            <span className="absolute -top-2 -right-3 bg-blue-600 text-xs w-5 h-5 flex items-center justify-center rounded-full">
+              {reqCount}
             </span>
           )}
         </div>
 
         {/* CHATS */}
         <div className="relative">
-          <Link to="/chats">Chats</Link>
+          <Link to="/chats" className="hover:text-blue-400">
+            Chats
+          </Link>
+
           {chatCount > 0 && (
-            <span className="absolute -top-2 -right-3 bg-blue-600 text-xs px-2 py-0.5 rounded-full">
+            <span className="absolute -top-2 -right-3 bg-blue-600 text-xs w-5 h-5 flex items-center justify-center rounded-full">
               {chatCount}
             </span>
           )}
         </div>
 
+        <Link to="/profile" className="hover:text-blue-400">
+          Profile
+        </Link>
+
         <button
-          onClick={handleLogout}
-          className="bg-blue-600 px-4 py-1.5 rounded text-white"
+          onClick={logout}
+          className="bg-blue-600 px-3 py-1 rounded hover:bg-blue-700"
         >
           Logout
         </button>
 
       </div>
-    </nav>
+    </div>
   );
 }
 

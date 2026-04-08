@@ -3,21 +3,21 @@ import { useLocation } from "react-router-dom";
 
 function Layout({ children }) {
   const location = useLocation();
+  const user = JSON.parse(localStorage.getItem("user"));
 
-  const storedUser = localStorage.getItem("user");
-  const isLoggedIn = !!storedUser;
-
-  // Routes where navbar should be hidden
-  const hideNavbarRoutes = ["/", "/signup"];
+  // hide navbar only on auth pages
+  const hideNavbarRoutes = ["/login", "/signup"];
 
   const shouldHideNavbar =
-    !isLoggedIn || hideNavbarRoutes.includes(location.pathname);
+    !user || hideNavbarRoutes.includes(location.pathname);
 
   return (
     <div className="bg-gray-950 text-white">
 
+      {/* NAVBAR */}
       {!shouldHideNavbar && <Navbar />}
 
+      {/* PAGE CONTENT */}
       <div
         className={
           shouldHideNavbar

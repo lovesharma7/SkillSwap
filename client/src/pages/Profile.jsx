@@ -1,141 +1,109 @@
 import { useEffect, useState } from "react";
 
 function Profile() {
-  const storedUser = localStorage.getItem("user");
-  const currentUser = storedUser ? JSON.parse(storedUser) : null;
+  const [profile, setProfile] = useState({
+    skillsOffered: "",
+    skillsWanted: "",
+  });
 
-  const [skillsOffered, setSkillsOffered] = useState("");
-  const [skillsWanted, setSkillsWanted] = useState("");
-  const [isEditing, setIsEditing] = useState(true);
-  const [loading, setLoading] = useState(true);
+  const [saved, setSaved] = useState(false);
+
+  const currentUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    if (!currentUser) return;
+  fetch(`http://localhost:5000/api/auth/profile/${currentUser.id}`)
+    .then((res) => res.json())
+    .then((data) => {
+      if (!data || !data.skillsOffered) return;
 
-    fetch(`http://localhost:5000/api/auth/user/${currentUser.id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.skillsOffered?.length || data.skillsWanted?.length) {
-          setSkillsOffered(data.skillsOffered.join(", "));
-          setSkillsWanted(data.skillsWanted.join(", "));
-          setIsEditing(false);
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
+      setProfile({
+        skillsOffered: data.skillsOffered.join(", "),
+        skillsWanted: data.skillsWanted.join(", "),
+      });
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+      setSaved(true);
+    })
+    .catch(() => {});
+}, []);
 
-    const res = await fetch("http://localhost:5000/api/auth/update-skills", {
+  const handleChange = (e) => {
+    setProfile({
+      ...profile,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSave = async () => {
+    await fetch("http://localhost:5000/api/auth/profile", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         userId: currentUser.id,
-        skillsOffered: skillsOffered.split(",").map(s => s.trim()),
-        skillsWanted: skillsWanted.split(",").map(s => s.trim()),
+        skillsOffered: profile.skillsOffered.split(",").map(s => s.trim()),
+        skillsWanted: profile.skillsWanted.split(",").map(s => s.trim()),
       }),
     });
 
-    const data = await res.json();
-    alert(data.message);
-    setIsEditing(false);
+    setSaved(true);
+    alert("Profile saved");
   };
 
-  if (!currentUser) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-950 text-white">
-        Please login first
-      </div>
-    );
-  }
-
-  if (loading) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-950 text-gray-400">
-        Loading profile...
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-950 text-white p-6">
+    <div className="h-full overflow-y-auto bg-gray-950 text-white p-8">
+      <div className="max-w-xl mx-auto">
 
-      {/* 🔥 Title outside card */}
-      <h1 className="text-2xl font-semibold text-center mb-8">
-        Profile
-      </h1>
+        {/* HEADER */}
+        <h1 className="text-3xl font-semibold mb-6 tracking-tight text-center">
+          Profile
+        </h1>
 
-      <div className="flex justify-center">
-        <div className="w-full max-w-md">
+        {/* CARD */}
+        <div className="bg-gradient-to-br from-gray-900 to-gray-800 p-6 rounded-xl border border-gray-700 shadow-lg space-y-5">
 
-          <div className="bg-gray-900 p-8 rounded-lg border border-gray-800">
-
-            {isEditing ? (
-              <form onSubmit={handleSubmit} className="space-y-4">
-
-                <div>
-                  <label className="text-sm text-gray-400">
-                    Skills You Offer
-                  </label>
-                  <input
-                    type="text"
-                    value={skillsOffered}
-                    onChange={(e) => setSkillsOffered(e.target.value)}
-                    className="w-full mt-1 p-2 bg-gray-800 text-white rounded border border-gray-700"
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm text-gray-400">
-                    Skills You Want
-                  </label>
-                  <input
-                    type="text"
-                    value={skillsWanted}
-                    onChange={(e) => setSkillsWanted(e.target.value)}
-                    className="w-full mt-1 p-2 bg-gray-800 text-white rounded border border-gray-700"
-                  />
-                </div>
-
-                <button className="w-full bg-blue-600 p-1.5 rounded text-white hover:bg-blue-700">
-                  Save
-                </button>
-
-              </form>
-            ) : (
-              <div className="space-y-5">
-
-                <div>
-                  <p className="text-gray-400 text-sm">Skills You Offer</p>
-                  <p className="text-white mt-1">
-                    {skillsOffered || "None"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-gray-400 text-sm">Skills You Want</p>
-                  <p className="text-white mt-1">
-                    {skillsWanted || "None"}
-                  </p>
-                </div>
-
-                {/* 🔥 BLUE EDIT BUTTON */}
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="w-full bg-blue-600 p-1.5 rounded text-white hover:bg-blue-700"
-                >
-                  Edit
-                </button>
-
-              </div>
-            )}
-
+          {/* USER INFO */}
+          <div className="text-center">
+            <p className="text-lg font-medium">{currentUser.name}</p>
+            <p className="text-sm text-gray-400">{currentUser.email}</p>
           </div>
+
+          {/* SKILLS OFFERED */}
+          <div>
+            <label className="text-sm text-gray-400">Skills Offered</label>
+            <input
+              type="text"
+              name="skillsOffered"
+              value={profile.skillsOffered}
+              onChange={handleChange}
+              placeholder="e.g. React, Java, Photoshop"
+              className="w-full mt-1 p-3 bg-gray-800 rounded-lg outline-none focus:ring-2 focus:ring-blue-600"
+            />
+          </div>
+
+          {/* SKILLS WANTED */}
+          <div>
+            <label className="text-sm text-gray-400">Skills Wanted</label>
+            <input
+              type="text"
+              name="skillsWanted"
+              value={profile.skillsWanted}
+              onChange={handleChange}
+              placeholder="e.g. Node.js, UI Design"
+              className="w-full mt-1 p-3 bg-gray-800 rounded-lg outline-none focus:ring-2 focus:ring-blue-600"
+            />
+          </div>
+
+          {/* BUTTON */}
+          <button
+            onClick={handleSave}
+            className="w-full bg-blue-600 py-2.5 rounded-lg hover:bg-blue-700 transition font-medium"
+          >
+            {saved ? "Update Profile" : "Save Profile"}
+          </button>
+
         </div>
+
       </div>
     </div>
   );
