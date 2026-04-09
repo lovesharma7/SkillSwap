@@ -11,7 +11,7 @@ function Profile() {
   const currentUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-  fetch(`http://localhost:5000/api/auth/profile/${currentUser.id}`)
+  fetch(`https://skillswap-cimn.onrender.com/api/auth/profile/${currentUser.id}`)
     .then((res) => res.json())
     .then((data) => {
       if (!data || !data.skillsOffered) return;
@@ -34,7 +34,7 @@ function Profile() {
   };
 
   const handleSave = async () => {
-    await fetch("http://localhost:5000/api/auth/profile", {
+    await fetch("https://skillswap-cimn.onrender.com/api/auth/profile", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

@@ -7,7 +7,7 @@ function Discover() {
   const currentUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    fetch("http://localhost:5000/api/auth/users")
+    fetch("https://skillswap-cimn.onrender.com/api/auth/users")
       .then((res) => res.json())
       .then((data) => setUsers(data));
   }, []);
@@ -87,7 +87,7 @@ function Discover() {
                   className="mt-3 w-full bg-blue-600 py-2 rounded-md hover:bg-blue-700 transition"
                   onClick={async () => {
                     const res = await fetch(
-                      "http://localhost:5000/api/auth/send-request",
+                      "https://skillswap-cimn.onrender.com/api/auth/send-request",
                       {
                         method: "POST",
                         headers: {

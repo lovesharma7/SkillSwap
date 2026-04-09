@@ -11,7 +11,7 @@ function ChatList() {
 
   // fetch chat users
   useEffect(() => {
-    fetch(`http://localhost:5000/api/auth/chat-users/${currentUser.id}`)
+    fetch(`https://skillswap-cimn.onrender.com/api/auth/chat-users/${currentUser.id}`)
       .then(res => res.json())
       .then(data => setUsers(data));
   }, []);
@@ -19,7 +19,7 @@ function ChatList() {
   // fetch unread counts
   useEffect(() => {
     users.forEach(u => {
-      fetch(`http://localhost:5000/api/auth/unread-user/${currentUser.id}/${u._id}`)
+      fetch(`https://skillswap-cimn.onrender.com/api/auth/unread-user/${currentUser.id}/${u._id}`)
         .then(res => res.json())
         .then(data => {
           setUnread(prev => ({
@@ -33,7 +33,7 @@ function ChatList() {
   // 🔥 fetch last message time (NEW)
   useEffect(() => {
     users.forEach(u => {
-      fetch(`http://localhost:5000/api/auth/messages/${currentUser.id}/${u._id}`)
+      fetch(`https://skillswap-cimn.onrender.com/api/auth/messages/${currentUser.id}/${u._id}`)
         .then(res => res.json())
         .then(data => {
           if (data.length > 0) {

@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:5000");
+const socket = io("https://skillswap-cimn.onrender.com");
 
 function Chat() {
   const { id } = useParams();
@@ -22,7 +22,7 @@ function Chat() {
 
   // fetch user
   useEffect(() => {
-    fetch("http://localhost:5000/api/auth/users")
+    fetch("https://skillswap-cimn.onrender.com/api/auth/users")
       .then(res => res.json())
       .then(data => {
         const found = data.find(u => u._id === id);
@@ -32,7 +32,7 @@ function Chat() {
 
   // fetch messages
   const fetchMessages = () => {
-    fetch(`http://localhost:5000/api/auth/messages/${currentUser.id}/${id}`)
+    fetch(`https://skillswap-cimn.onrender.com/api/auth/messages/${currentUser.id}/${id}`)
       .then(res => res.json())
       .then(data => {
         setMessages(data);
@@ -48,7 +48,7 @@ function Chat() {
   useEffect(() => {
     socket.emit("join", currentUser.id);
 
-    fetch("http://localhost:5000/api/auth/mark-seen", {
+    fetch("https://skillswap-cimn.onrender.com/api/auth/mark-seen", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -79,7 +79,7 @@ function Chat() {
       text,
     };
 
-    await fetch("http://localhost:5000/api/auth/send-message", {
+    await fetch("https://skillswap-cimn.onrender.com/api/auth/send-message", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

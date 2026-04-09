@@ -9,7 +9,7 @@ function Requests() {
   const user = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
-    fetch(`http://localhost:5000/api/auth/requests/${user.id}`)
+    fetch(`https://skillswap-cimn.onrender.com/api/auth/requests/${user.id}`)
       .then((res) => res.json())
       .then((data) => {
         setSent(data.sent);
@@ -18,7 +18,7 @@ function Requests() {
   }, []);
 
   const updateRequest = async (id, status) => {
-    await fetch("http://localhost:5000/api/auth/update-request", {
+    await fetch("https://skillswap-cimn.onrender.com/api/auth/update-request", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

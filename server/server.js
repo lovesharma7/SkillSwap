@@ -11,8 +11,12 @@ const authRoutes = require("./routes/auth");
 
 const app = express();
 
-// Middleware
-app.use(cors());
+// 🔥 IMPORTANT: CORS (ALLOW FRONTEND)
+app.use(cors({
+  origin: "https://skillswap7.vercel.app", // 🔁 replace after deploy
+  credentials: true
+}));
+
 app.use(express.json());
 
 // Routes
@@ -27,22 +31,23 @@ mongoose
 // Create server
 const server = http.createServer(app);
 
-// Socket setup
+// 🔥 SOCKET.IO CORS FIX
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: "https://skillswap7.vercel.app", // 🔁 same here
+    methods: ["GET", "POST"],
   },
 });
 
 io.on("connection", (socket) => {
   console.log("User connected:", socket.id);
 
-  // ✅ Join room with userId
+  // Join room
   socket.on("join", (userId) => {
     socket.join(userId);
   });
 
-  // ✅ Send message to specific user
+  // Send message
   socket.on("send_message", (data) => {
     io.to(data.to).emit("receive_message", data);
   });
